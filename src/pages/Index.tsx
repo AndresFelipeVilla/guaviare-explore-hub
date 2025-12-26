@@ -7,10 +7,7 @@ import Footer from "@/components/Footer";
 
 const Index = () => {
   const handleChatbotAccess = () => {
-    toast({
-      title: "Chatbot de Turismo",
-      description: "Esta funcionalidad requiere integración con base de datos. Conecta Supabase para continuar.",
-    });
+    window.location.href = "/chatbot";
   };
 
   const handleReportsAccess = () => {
@@ -26,7 +23,7 @@ const Index = () => {
       <Hero />
       
       {/* Modules Section */}
-      <section className="py-20 px-4">
+      <section id="modulos" className="py-20 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6">
@@ -62,9 +59,7 @@ const Index = () => {
               features={[
                 "Registro y autenticación de usuarios con roles",
                 "Creación y envío de informes por funcionarios", 
-                "Adjuntar archivos PDF e imágenes",
                 "Revisión y aprobación por administradores",
-                "Sistema de notificaciones por correo electrónico",
                 "Historial completo de estados de informes"
               ]}
               icon={FileText}

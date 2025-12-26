@@ -5,11 +5,12 @@ const Footer = () => {
     <footer className="bg-primary text-primary-foreground py-12">
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-3 gap-8">
+
           {/* Logo and Description */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <MapPin className="h-6 w-6" />
-              <span className="text-xl font-bold">Guaviare Digital</span>
+              <span className="text-xl font-bold">Red Cultural Guaviare</span>
             </div>
             <p className="text-primary-foreground/80 leading-relaxed">
               Plataforma digital para el desarrollo sostenible del departamento del Guaviare, 
@@ -18,7 +19,7 @@ const Footer = () => {
           </div>
 
           {/* Contact Info */}
-          <div className="space-y-4">
+          <div id="contacto" className="space-y-4">
             <h3 className="text-lg font-semibold">Contacto</h3>
             <div className="space-y-3 text-primary-foreground/80">
               <div className="flex items-center gap-2">
@@ -40,9 +41,8 @@ const Footer = () => {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Información</h3>
             <div className="space-y-2 text-primary-foreground/80">
-              <p className="text-sm">© 2024 Gobierno del Guaviare</p>
+              <p className="text-sm">© 2025 Gobernación del Guaviare</p>
               <p className="text-sm">Todos los derechos reservados</p>
-              <p className="text-sm">Política de privacidad | Términos de uso</p>
             </div>
           </div>
         </div>
