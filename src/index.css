@@ -57,6 +57,20 @@ All colors MUST be HSL.
 
     --radius: 0.5rem;
 
+    /* MilInforme Guaviare - Institutional Colors */
+    --institutional-green-dark: 168 75% 16%;      /* #094a3e - Very dark green */
+    --institutional-green: 168 75% 21%;           /* #0d5c4d - Primary institutional green */
+    --institutional-green-medium: 168 75% 27%;    /* #0f7a65 - Hover state */
+    --institutional-green-light: 168 60% 40%;     /* #41ab8e - Focus borders */
+    --institutional-green-pale: 168 40% 95%;      /* #edf7f4 - Subtle backgrounds */
+    --institutional-text: 168 75% 15%;            /* Text primary */
+    --institutional-text-muted: 168 20% 45%;      /* Text secondary */
+    
+    /* Institutional Shadows - Minimal */
+    --shadow-minimal: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --shadow-card-minimal: 0 2px 8px rgba(9, 74, 62, 0.08);
+    --shadow-focus: 0 0 0 3px hsl(var(--institutional-green-pale));
+
     --sidebar-background: 0 0% 98%;
 
     --sidebar-foreground: 240 5.3% 26.1%;

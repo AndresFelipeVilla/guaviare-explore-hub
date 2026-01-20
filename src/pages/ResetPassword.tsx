@@ -1,5 +1,5 @@
-import { FormEvent, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -15,24 +15,37 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 
+const API_BASE_URL = "http://localhost:8084/api/auth/password-recovery";
+
 type ResetStep = "request" | "confirm";
 
 const ResetPassword = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [step, setStep] = useState<ResetStep>("request");
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
+  const [token, setToken] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Check if there's a token in the URL (coming from email link)
+  useEffect(() => {
+    const urlToken = searchParams.get("token");
+    if (urlToken) {
+      setToken(urlToken);
+      setStep("confirm");
+    }
+  }, [searchParams]);
 
   const isSubmitDisabled = useMemo(() => {
     if (step === "request") {
       return !email;
     }
-    return !code || !password || !confirmPassword;
-  }, [step, email, code, password, confirmPassword]);
+    return !token || !password || !confirmPassword;
+  }, [step, email, token, password, confirmPassword]);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (step === "confirm" && password !== confirmPassword) {
@@ -45,26 +58,63 @@ const ResetPassword = () => {
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
+
+    try {
       if (step === "request") {
-        toast({
-          title: "Código enviado",
-          description: `Hemos enviado un código temporal al correo ${email}.`,
+        // Call forgot-password endpoint
+        const response = await fetch(`${API_BASE_URL}/forgot-password`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
         });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || "Error al enviar el correo de recuperación");
+        }
+
+        toast({
+          title: "Correo enviado",
+          description: `Hemos enviado un enlace de recuperación al correo ${email}. Revisa tu bandeja de entrada.`,
+        });
+        // Move to the confirm step to allow entering token manually
         setStep("confirm");
       } else {
+        // Call reset-password endpoint
+        const response = await fetch(`${API_BASE_URL}/reset-password`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ token, newPassword: password }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || "Error al restablecer la contraseña");
+        }
+
         toast({
           title: "Contraseña actualizada",
-          description: "Ahora puedes iniciar sesión con tu nueva contraseña.",
+          description: "Tu contraseña ha sido restablecida. Ahora puedes iniciar sesión.",
         });
-        setEmail("");
-        setCode("");
-        setPassword("");
-        setConfirmPassword("");
-        setStep("request");
+
+        // Redirect to login after successful password reset
+        setTimeout(() => {
+          navigate("/auth");
+        }, 2000);
       }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Ha ocurrido un error inesperado.",
+        variant: "destructive",
+      });
+    } finally {
       setIsSubmitting(false);
-    }, 900);
+    }
   };
 
   const steps = [
@@ -112,9 +162,9 @@ const ResetPassword = () => {
           </div>
 
           <Button asChild variant="ghost" className="text-primary hover:text-primary/80">
-            <Link to="/">
+            <Link to="/auth">
               <ArrowLeft className="h-4 w-4" />
-              Volver al inicio
+              Volver
             </Link>
           </Button>
         </header>
@@ -145,40 +195,44 @@ const ResetPassword = () => {
                 </div>
 
                 <form className="space-y-5" onSubmit={handleSubmit}>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Correo institucional</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/60" />
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="turismo@guaviare.gov.co"
-                        value={email}
-                        onChange={(event) => setEmail(event.target.value)}
-                        className="pl-10"
-                        required
-                      />
+                  {step === "request" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Correo institucional</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/60" />
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="turismo@guaviare.gov.co"
+                          value={email}
+                          onChange={(event) => setEmail(event.target.value)}
+                          className="pl-10"
+                          required
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {step === "confirm" && (
                     <>
                       <div className="space-y-2">
-                        <Label htmlFor="code">Código de verificación</Label>
+                        <Label htmlFor="token">Token de verificación</Label>
                         <div className="relative">
                           <RefreshCcw className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/60" />
                           <Input
-                            id="code"
+                            id="token"
                             type="text"
-                            inputMode="numeric"
-                            placeholder="Ingresa el código de 6 dígitos"
-                            value={code}
-                            onChange={(event) => setCode(event.target.value)}
-                            className="pl-10 tracking-[0.4em]"
-                            maxLength={6}
+                            placeholder="Token recibido por correo"
+                            value={token}
+                            onChange={(event) => setToken(event.target.value)}
+                            className="pl-10"
                             required
+                            disabled={!!searchParams.get("token")}
                           />
                         </div>
+                        {searchParams.get("token") && (
+                          <p className="text-xs text-muted-foreground">Token obtenido del enlace de recuperación.</p>
+                        )}
                       </div>
 
                       <div className="space-y-2">
@@ -219,7 +273,7 @@ const ResetPassword = () => {
                     ) : step === "request" ? (
                       <>
                         <ShieldCheck className="h-4 w-4" />
-                        Enviar código seguro
+                        Enviar enlace de recuperación
                       </>
                     ) : (
                       <>
@@ -266,13 +320,13 @@ const ResetPassword = () => {
               </CardHeader>
               <CardContent className="space-y-4 text-sm text-muted-foreground">
                 <p>
-                  1. Revisa tu bandeja de entrada y el correo no deseado. El remitente oficial es <strong>no-reply@guaviare.gov.co</strong>.
+                  1. Revisa tu bandeja de entrada y el correo no deseado.
                 </p>
                 <p>
-                  2. Copia el código de 6 dígitos y escríbelo exactamente como aparece. Tiene una vigencia de 10 minutos.
+                  2. Haz clic en el botón del correo o copia el enlace. El token tiene una vigencia de 60 minutos.
                 </p>
                 <p>
-                  3. Al finalizar, recibirás una confirmación para iniciar sesión nuevamente en la intranet.
+                  3. Al finalizar, serás redirigido para iniciar sesión con tu nueva contraseña.
                 </p>
               </CardContent>
             </Card>

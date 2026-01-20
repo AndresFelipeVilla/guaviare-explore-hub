@@ -11,17 +11,14 @@ const Index = () => {
   };
 
   const handleReportsAccess = () => {
-    toast({
-      title: "Sistema de Informes", 
-      description: "Esta funcionalidad requiere autenticación y base de datos. Conecta Supabase para continuar.",
-    });
+    window.location.href = "/auth";
   };
 
   return (
     <div className="min-h-screen bg-gradient-nature">
       <Header />
       <Hero />
-      
+
       {/* Modules Section */}
       <section id="modulos" className="py-20 px-4">
         <div className="container mx-auto">
@@ -30,7 +27,7 @@ const Index = () => {
               Módulos del Sistema
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Accede a nuestros servicios digitales diseñados para promover el turismo 
+              Accede a nuestros servicios digitales diseñados para promover el turismo
               sostenible y mejorar la gestión institucional en el Guaviare
             </p>
           </div>
@@ -58,7 +55,7 @@ const Index = () => {
               description="Plataforma integral para la gestión de informes institucionales con roles diferenciados, permitiendo el flujo eficiente de documentos entre funcionarios y administradores."
               features={[
                 "Registro y autenticación de usuarios con roles",
-                "Creación y envío de informes por funcionarios", 
+                "Creación y envío de informes por funcionarios",
                 "Revisión y aprobación por administradores",
                 "Historial completo de estados de informes"
               ]}
@@ -83,7 +80,7 @@ const Index = () => {
                   Tecnología de inteligencia artificial para respuestas precisas sobre turismo y cultura local
                 </p>
               </div>
-              
+
               <div className="text-center p-6">
                 <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Users className="h-8 w-8 text-primary" />
@@ -93,7 +90,7 @@ const Index = () => {
                   Sistema de roles que facilita la colaboración entre funcionarios y administradores
                 </p>
               </div>
-              
+
               <div className="text-center p-6">
                 <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Eye className="h-8 w-8 text-primary" />
