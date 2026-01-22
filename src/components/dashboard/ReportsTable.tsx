@@ -2,11 +2,19 @@ import { useState, useMemo } from 'react';
 import { Search, Filter, ChevronDown, Eye } from 'lucide-react';
 import { AdminReport, ReportStatus, ReportStatusLabels } from '@/types/dashboard';
 import StatusBadge from './StatusBadge';
+import Pagination from '@/components/ui/Pagination';
 
 interface ReportsTableProps {
     reports: AdminReport[];
     isLoading?: boolean;
     onViewReport?: (reportId: string) => void;
+    paginationData?: {
+        currentPage: number;
+        totalPages: number;
+        totalElements: number;
+        pageSize: number;
+    };
+    onPageChange?: (page: number) => void;
 }
 
 const statusOptions: { value: ReportStatus | 'ALL'; label: string }[] = [
@@ -18,7 +26,7 @@ const statusOptions: { value: ReportStatus | 'ALL'; label: string }[] = [
     { value: 'DRAFT', label: 'Borrador' },
 ];
 
-export default function ReportsTable({ reports, isLoading, onViewReport }: ReportsTableProps) {
+export default function ReportsTable({ reports, isLoading, onViewReport, paginationData, onPageChange }: ReportsTableProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<ReportStatus | 'ALL'>('ALL');
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -230,14 +238,15 @@ export default function ReportsTable({ reports, isLoading, onViewReport }: Repor
                 )}
             </div>
 
-            {/* Footer with count */}
-            {!isLoading && filteredReports.length > 0 && (
-                <div className="px-6 py-3 border-t border-gray-100 bg-gray-50">
-                    <p className="text-sm text-gray-500">
-                        Mostrando <span className="font-medium text-gray-700">{filteredReports.length}</span> de{' '}
-                        <span className="font-medium text-gray-700">{Array.isArray(reports) ? reports.length : 0}</span> informes
-                    </p>
-                </div>
+            {/* Pagination */}
+            {paginationData && onPageChange && (
+                <Pagination
+                    currentPage={paginationData.currentPage}
+                    totalPages={paginationData.totalPages}
+                    totalElements={paginationData.totalElements}
+                    pageSize={paginationData.pageSize}
+                    onPageChange={onPageChange}
+                />
             )}
         </div>
     );

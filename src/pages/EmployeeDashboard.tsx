@@ -65,7 +65,7 @@ export default function EmployeeDashboard() {
     };
 
     return (
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex h-screen bg-gray-50 overflow-hidden">
             {/* Sidebar */}
             <Sidebar
                 userName={userName}
@@ -73,7 +73,7 @@ export default function EmployeeDashboard() {
             />
 
             {/* Main Content */}
-            <main className="flex-1 p-8">
+            <main className="flex-1 p-8 overflow-y-auto">
                 {/* Header */}
                 <header className="flex items-center justify-between mb-8">
                     <div>

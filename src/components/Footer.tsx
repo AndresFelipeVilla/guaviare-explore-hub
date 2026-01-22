@@ -2,7 +2,7 @@ import { MapPin, Mail, Phone } from "lucide-react";
 
 const Footer = () => {
   return (
-    <footer className="bg-primary text-primary-foreground py-12">
+    <footer className="bg-[#1f1f1f] text-primary-foreground py-12">
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-3 gap-8">
 
@@ -13,7 +13,7 @@ const Footer = () => {
               <span className="text-xl font-bold">Red Cultural Guaviare</span>
             </div>
             <p className="text-primary-foreground/80 leading-relaxed">
-              Plataforma digital para el desarrollo sostenible del departamento del Guaviare, 
+              Plataforma digital para el desarrollo sostenible del departamento del Guaviare,
               promoviendo el turismo responsable y la gestión institucional eficiente.
             </p>
           </div>

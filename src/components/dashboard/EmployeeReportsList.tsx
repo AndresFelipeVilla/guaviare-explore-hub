@@ -6,6 +6,7 @@ import { EmployeeReport, ReportStatus } from '@/types/dashboard';
 import StatusBadge from './StatusBadge';
 import ReportPDF from '@/components/pdf/ReportPDF';
 import { reportService } from '@/services/api/reportService';
+import Pagination from '@/components/ui/Pagination';
 
 interface EmployeeReportCardProps {
     report: EmployeeReport;
@@ -117,7 +118,7 @@ export function EmployeeReportCard({ report, userName, onEdit, onDelete, onView 
                     <>
                         <button
                             onClick={() => onView?.(report.id)}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-transparent border border-green-600 text-green-700 rounded-lg text-sm font-medium hover:bg-green-50 transition-colors"
                         >
                             <Eye className="w-4 h-4" />
                             Ver Detalles
@@ -125,7 +126,7 @@ export function EmployeeReportCard({ report, userName, onEdit, onDelete, onView 
                         <button
                             onClick={handleGeneratePDF}
                             disabled={isGeneratingPdf}
-                            className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors disabled:opacity-50"
+                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
                         >
                             {isGeneratingPdf ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -152,6 +153,13 @@ interface EmployeeReportsListProps {
     onEdit?: (reportId: string) => void;
     onDelete?: (reportId: string) => void;
     onView?: (reportId: string) => void;
+    paginationData?: {
+        currentPage: number;
+        totalPages: number;
+        totalElements: number;
+        pageSize: number;
+    };
+    onPageChange?: (page: number) => void;
 }
 
 const statusOptions: { value: ReportStatus | 'ALL'; label: string }[] = [
@@ -169,7 +177,9 @@ export default function EmployeeReportsList({
     userName,
     onEdit,
     onDelete,
-    onView
+    onView,
+    paginationData,
+    onPageChange
 }: EmployeeReportsListProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<ReportStatus | 'ALL'>('ALL');
@@ -209,7 +219,7 @@ export default function EmployeeReportsList({
                                 placeholder="Título, palabra clave..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-4 pr-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-sm"
+                                className="w-full pl-4 pr-4 py-2.5 rounded-lg border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all text-sm"
                             />
                         </div>
                     </div>
@@ -239,7 +249,7 @@ export default function EmployeeReportsList({
                                                 setStatusFilter(option.value);
                                                 setIsFilterOpen(false);
                                             }}
-                                            className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${statusFilter === option.value ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+                                            className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${statusFilter === option.value ? 'bg-green-50 text-green-700' : 'text-gray-700'
                                                 } ${index === 0 ? 'rounded-t-lg' : ''} ${index === statusOptions.length - 1 ? 'rounded-b-lg' : ''}`}
                                         >
                                             {option.label}
@@ -252,7 +262,7 @@ export default function EmployeeReportsList({
 
                     {/* Search Button */}
                     <div className="sm:w-32 flex items-end">
-                        <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                        <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-700 text-white rounded-lg text-sm font-medium hover:bg-green-800 transition-colors">
                             <Search className="w-4 h-4" />
                             Buscar
                         </button>
@@ -308,12 +318,15 @@ export default function EmployeeReportsList({
                 </div>
             )}
 
-            {/* Footer with count */}
-            {!isLoading && filteredReports.length > 0 && (
-                <div className="text-sm text-gray-500 text-center">
-                    Mostrando <span className="font-medium text-gray-700">{filteredReports.length}</span> de{' '}
-                    <span className="font-medium text-gray-700">{reports.length}</span> informes
-                </div>
+            {/* Pagination */}
+            {paginationData && onPageChange && (
+                <Pagination
+                    currentPage={paginationData.currentPage}
+                    totalPages={paginationData.totalPages}
+                    totalElements={paginationData.totalElements}
+                    pageSize={paginationData.pageSize}
+                    onPageChange={onPageChange}
+                />
             )}
         </div>
     );

@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     datesRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 20,
+        marginBottom: 50,
     },
     dateBlock: {
         flex: 1,

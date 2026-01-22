@@ -18,10 +18,10 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 158 25% 15%;
 
-    /* Amazon Green Primary */
-    --primary: 158 64% 22%;
+    /* Amazon Green Primary - Updated to #02945c */
+    --primary: 163 97% 29%;
     --primary-foreground: 120 20% 98%;
-    --primary-glow: 158 64% 45%;
+    --primary-glow: 163 97% 50%;
 
     /* River Blue Secondary */
     --secondary: 200 85% 45%;
@@ -58,14 +58,21 @@ All colors MUST be HSL.
     --radius: 0.5rem;
 
     /* MilInforme Guaviare - Institutional Colors */
-    --institutional-green-dark: 168 75% 16%;      /* #094a3e - Very dark green */
-    --institutional-green: 168 75% 21%;           /* #0d5c4d - Primary institutional green */
-    --institutional-green-medium: 168 75% 27%;    /* #0f7a65 - Hover state */
-    --institutional-green-light: 168 60% 40%;     /* #41ab8e - Focus borders */
-    --institutional-green-pale: 168 40% 95%;      /* #edf7f4 - Subtle backgrounds */
-    --institutional-text: 168 75% 15%;            /* Text primary */
-    --institutional-text-muted: 168 20% 45%;      /* Text secondary */
-    
+    --institutional-green-dark: 168 75% 16%;
+    /* #094a3e - Very dark green */
+    --institutional-green: 168 75% 21%;
+    /* #0d5c4d - Primary institutional green */
+    --institutional-green-medium: 168 75% 27%;
+    /* #0f7a65 - Hover state */
+    --institutional-green-light: 168 60% 40%;
+    /* #41ab8e - Focus borders */
+    --institutional-green-pale: 168 40% 95%;
+    /* #edf7f4 - Subtle backgrounds */
+    --institutional-text: 168 75% 15%;
+    /* Text primary */
+    --institutional-text-muted: 168 20% 45%;
+    /* Text secondary */
+
     /* Institutional Shadows - Minimal */
     --shadow-minimal: 0 1px 3px rgba(0, 0, 0, 0.05);
     --shadow-card-minimal: 0 2px 8px rgba(9, 74, 62, 0.08);
@@ -135,4 +142,22 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@keyframes pulse-scale {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-pulse-scale {
+  animation: pulse-scale 3s ease-in-out infinite;
 }

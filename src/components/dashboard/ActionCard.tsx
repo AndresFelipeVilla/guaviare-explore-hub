@@ -9,12 +9,9 @@ interface ActionCardProps {
 }
 
 export default function ActionCard({ icon, title, description, onClick, variant = 'primary' }: ActionCardProps) {
-    const iconBgColor = variant === 'primary'
-        ? 'hsl(200, 85%, 95%)'
-        : 'hsl(0, 70%, 95%)';
-    const iconColor = variant === 'primary'
-        ? 'hsl(200, 85%, 45%)'
-        : 'hsl(0, 70%, 55%)';
+    // Unified green theme colors for all action cards to match application branding
+    const iconBgColor = 'rgba(2, 148, 92, 0.1)';
+    const iconColor = '#02945c';
 
     return (
         <button

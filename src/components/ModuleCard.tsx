@@ -12,26 +12,26 @@ interface ModuleCardProps {
   onClick?: () => void;
 }
 
-const ModuleCard = ({ 
-  title, 
-  description, 
-  features, 
-  icon: Icon, 
-  buttonText, 
+const ModuleCard = ({
+  title,
+  description,
+  features,
+  icon: Icon,
+  buttonText,
   comingSoon = false,
-  onClick 
+  onClick
 }: ModuleCardProps) => {
   return (
-    <Card className="relative overflow-hidden bg-gradient-card border-primary/10 shadow-card-soft hover:shadow-nature transition-all duration-300 hover:-translate-y-2 p-8 group">
+    <Card className="relative overflow-hidden bg-white border border-primary/10 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-8 group">
       {comingSoon && (
         <div className="absolute top-4 right-4 bg-accent text-accent-foreground px-3 py-1 rounded-full text-xs font-medium">
           Próximamente
         </div>
       )}
-      
+
       <div className="flex items-start gap-4 mb-6">
-        <div className="bg-primary/10 p-3 rounded-lg group-hover:bg-primary/20 transition-colors">
-          <Icon className="h-8 w-8 text-primary group-hover:text-primary-glow transition-colors" />
+        <div className="bg-primary/10 p-3 rounded-lg group-hover:bg-primary/15 transition-colors">
+          <Icon className="h-8 w-8 text-primary" />
         </div>
         <div className="flex-1">
           <h3 className="text-2xl font-bold text-primary mb-2">{title}</h3>
@@ -51,9 +51,9 @@ const ModuleCard = ({
         </ul>
       </div>
 
-      <Button 
-        variant="module" 
-        size="lg" 
+      <Button
+        variant="module"
+        size="lg"
         className="w-full font-semibold"
         disabled={comingSoon}
         onClick={onClick}

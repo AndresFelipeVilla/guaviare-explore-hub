@@ -155,7 +155,7 @@ export default function AdminReportDetails() {
     };
 
     return (
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex h-screen bg-gray-50 overflow-hidden">
             {/* Admin Sidebar */}
             <AdminSidebar
                 userName={userName}
@@ -163,7 +163,7 @@ export default function AdminReportDetails() {
             />
 
             {/* Main Content */}
-            <main className="flex-1 p-8">
+            <main className="flex-1 p-8 overflow-y-auto">
                 {/* Header */}
                 <header className="flex items-center justify-between mb-8">
                     <div>

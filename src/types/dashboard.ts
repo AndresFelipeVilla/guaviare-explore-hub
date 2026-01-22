@@ -93,3 +93,20 @@ export interface EmployeeReport {
     sentAt?: string;
 }
 
+// ============================================
+// Pagination Types
+// ============================================
+
+// Generic paginated response type
+export interface PagedResponse<T> {
+    content: T[];
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+}
+
+// Specific paged responses
+export type PagedAdminReports = PagedResponse<AdminReport>;
+export type PagedEmployeeReports = PagedResponse<EmployeeReport>;
+

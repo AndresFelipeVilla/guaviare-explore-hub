@@ -12,23 +12,23 @@ export default function Register() {
 
     return (
         <AuthLayout>
-            <div className="bg-white rounded-2xl p-8 shadow-xl shadow-gray-200/50 border border-gray-100">
-                <div className="mb-6">
-                    <h2 className="text-2xl font-bold mb-2" style={{ color: 'hsl(168, 75%, 21%)' }}>
+            <div className="bg-white rounded-xl p-6 sm:p-8 shadow-xl shadow-gray-200/50 border border-gray-100 flex flex-col max-h-full overflow-hidden">
+                <div className="mb-3 flex-shrink-0">
+                    <h2 className="text-xl sm:text-2xl font-bold mb-1" style={{ color: 'hsl(168, 75%, 21%)' }}>
                         Registro de Usuario
                     </h2>
-                    <p className="text-sm" style={{ color: 'hsl(168, 20%, 45%)' }}>
+                    <p className="text-xs sm:text-sm" style={{ color: 'hsl(168, 20%, 45%)' }}>
                         Crea una nueva cuenta institucional
                     </p>
                 </div>
 
                 {/* User Type Selector */}
-                <div className="mb-6">
+                <div className="mb-3 flex-shrink-0">
                     <UserTypeSelector selectedType={userType} onTypeChange={setUserType} />
                 </div>
 
                 {/* Dynamic Registration Form */}
-                <div>
+                <div className="flex-1 min-h-0 overflow-y-auto">
                     {userType === 'boss' ? (
                         <BossRegistrationForm />
                     ) : (
@@ -37,8 +37,8 @@ export default function Register() {
                 </div>
 
                 {/* Back to Login Link */}
-                <div className="mt-8 pt-6 border-t border-gray-100 text-center space-y-4">
-                    <p className="text-sm" style={{ color: 'hsl(168, 20%, 45%)' }}>
+                <div className="mt-3 pt-3 border-t border-gray-100 text-center space-y-2 flex-shrink-0">
+                    <p className="text-xs sm:text-sm" style={{ color: 'hsl(168, 20%, 45%)' }}>
                         ¿Ya tiene una cuenta?{' '}
                         <Link
                             to="/auth"
@@ -50,10 +50,10 @@ export default function Register() {
                     </p>
                     <Link
                         to="/"
-                        className="inline-flex items-center gap-2 text-sm font-medium transition-colors hover:underline"
+                        className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium transition-colors hover:underline"
                         style={{ color: 'hsl(168, 60%, 35%)' }}
                     >
-                        <Home className="w-4 h-4" />
+                        <Home className="w-3 h-3 sm:w-4 sm:h-4" />
                         Ir al inicio
                     </Link>
                 </div>

@@ -12,6 +12,7 @@ import { useRequireAuth } from '@/hooks/useRequireAuth';
 export default function AdminViewReports() {
     const navigate = useNavigate();
     const [pageError, setPageError] = useState<string>('');
+    const [currentPage, setCurrentPage] = useState(0);
 
     // Require admin/boss authentication
     useRequireAuth({ allowedRoles: ['BOSS', 'JEFE', 'ADMIN'] });
@@ -27,21 +28,18 @@ export default function AdminViewReports() {
         retry: false,
     });
 
-    // Fetch all reports for admin
-    const { data: reports, isLoading: reportsLoading, error: reportsError } = useQuery({
-        queryKey: ['adminReports'],
-        queryFn: async () => {
-            const data = await dashboardService.getAdminReports();
-            // Ensure data is always an array
-            if (!Array.isArray(data)) {
-                console.warn('Reports data is not an array:', data);
-                return [];
-            }
-            return data;
-        },
+    // Fetch all reports for admin with pagination
+    const { data: reportsData, isLoading: reportsLoading, error: reportsError } = useQuery({
+        queryKey: ['adminReports', currentPage],
+        queryFn: () => dashboardService.getAdminReports(currentPage, 10),
         enabled: authService.isAuthenticated(),
         retry: false,
     });
+
+    // Handler for page changes
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+    };
 
     // Use API data if available, otherwise use stored data
     const userName = profile?.name || storedUser?.name || 'Administrador';
@@ -96,7 +94,7 @@ export default function AdminViewReports() {
 
     try {
         return (
-            <div className="flex min-h-screen bg-gray-50">
+            <div className="flex h-screen bg-gray-50 overflow-hidden">
                 {/* Sidebar */}
                 <AdminSidebar
                     userName={userName}
@@ -104,7 +102,7 @@ export default function AdminViewReports() {
                 />
 
                 {/* Main Content */}
-                <main className="flex-1 p-8">
+                <main className="flex-1 p-8 overflow-y-auto">
                     {/* Header */}
                     <header className="mb-8">
                         <h1 className="text-2xl font-bold text-gray-800 mb-1">
@@ -135,9 +133,16 @@ export default function AdminViewReports() {
 
                     {/* Reports Table */}
                     <ReportsTable
-                        reports={Array.isArray(reports) ? reports : []}
+                        reports={reportsData?.content || []}
                         isLoading={reportsLoading}
                         onViewReport={handleViewReport}
+                        paginationData={reportsData ? {
+                            currentPage: reportsData.page,
+                            totalPages: reportsData.totalPages,
+                            totalElements: reportsData.totalElements,
+                            pageSize: reportsData.size,
+                        } : undefined}
+                        onPageChange={handlePageChange}
                     />
                 </main>
             </div>

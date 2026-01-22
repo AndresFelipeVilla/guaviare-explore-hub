@@ -17,6 +17,7 @@ export default function MyReports() {
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [reportToDelete, setReportToDelete] = useState<string | null>(null);
+    const [currentPage, setCurrentPage] = useState(0);
 
     // Require employee authentication
     useRequireAuth({ allowedRoles: ['EMPLOYEE', 'EMPLEADO'] });
@@ -31,12 +32,17 @@ export default function MyReports() {
         enabled: authService.isAuthenticated(),
     });
 
-    // Fetch my reports
-    const { data: reports, isLoading: reportsLoading, error: reportsError } = useQuery({
-        queryKey: ['myReports'],
-        queryFn: () => dashboardService.getMyReports(),
+    // Fetch my reports with pagination
+    const { data: reportsData, isLoading: reportsLoading, error: reportsError } = useQuery({
+        queryKey: ['myReports', currentPage],
+        queryFn: () => dashboardService.getMyReports(currentPage, 3),
         enabled: authService.isAuthenticated(),
     });
+
+    // Handler for page changes
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+    };
 
     // Delete mutation
     const deleteMutation = useMutation({
@@ -79,7 +85,7 @@ export default function MyReports() {
     };
 
     return (
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex h-screen bg-gray-50 overflow-hidden">
             {/* Sidebar */}
             <Sidebar
                 userName={userName}
@@ -87,7 +93,7 @@ export default function MyReports() {
             />
 
             {/* Main Content */}
-            <main className="flex-1 p-8">
+            <main className="flex-1 p-8 overflow-y-auto">
                 {/* Header */}
                 <header className="flex items-center justify-between mb-8">
                     <div>
@@ -137,12 +143,19 @@ export default function MyReports() {
 
                 {/* Reports List */}
                 <EmployeeReportsList
-                    reports={Array.isArray(reports) ? reports : []}
+                    reports={reportsData?.content || []}
                     isLoading={reportsLoading}
                     userName={userName || 'Usuario'}
                     onEdit={handleEditReport}
                     onDelete={handleDeleteReport}
                     onView={handleViewReport}
+                    paginationData={reportsData ? {
+                        currentPage: reportsData.page,
+                        totalPages: reportsData.totalPages,
+                        totalElements: reportsData.totalElements,
+                        pageSize: reportsData.size,
+                    } : undefined}
+                    onPageChange={handlePageChange}
                 />
             </main>
 

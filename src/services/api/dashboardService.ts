@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { UserProfile, ReportSummary, AdminReport, ReportsStats, ReportFilters, ReportStatus, EmployeeReport } from '@/types/dashboard';
+import { UserProfile, ReportSummary, AdminReport, ReportsStats, ReportFilters, ReportStatus, EmployeeReport, PagedAdminReports, PagedEmployeeReports } from '@/types/dashboard';
 
 // ============================================
 // Helper Functions
@@ -68,22 +68,29 @@ export const dashboardService = {
 
     /**
      * Get all reports for admin review
+     * @param page - Page number (0-indexed)
+     * @param size - Number of items per page
      * @param filters - Optional filters for status and search
-     * @returns Array of reports with employee info
+     * @returns Paged response with reports and metadata
      */
-    async getAdminReports(filters?: ReportFilters): Promise<AdminReport[]> {
+    async getAdminReports(page: number = 0, size: number = 10, filters?: ReportFilters): Promise<PagedAdminReports> {
         try {
             let url = '/api/reports/summary';
             const params = new URLSearchParams();
+
+            // Add pagination parameters
+            params.append('page', page.toString());
+            params.append('size', size.toString());
+
+            // Add filters if provided
             if (filters?.status) {
                 params.append('status', filters.status);
             }
             if (filters?.search) {
-                params.append('search', filters.search);
+                params.append('query', filters.search);
             }
-            if (params.toString()) {
-                url += `?${params.toString()}`;
-            }
+
+            url += `?${params.toString()}`;
 
             // Backend returns a paginated response
             interface BackendReportItem {
@@ -120,11 +127,39 @@ export const dashboardService = {
             }));
 
             console.log('Mapped reports:', mappedReports);
-            return mappedReports;
+
+            // SMART PAGINATION FIX (Backend Workaround)
+            const currentCount = mappedReports.length;
+            const responsePage = response.page;
+            const responseSize = response.size;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const totalElements = response.totalElements ?? (response as any).total ?? 0;
+
+            const calculatedMinTotal = (responsePage * responseSize) + currentCount;
+            const adjustedTotal = (currentCount >= responseSize)
+                ? Math.max(totalElements, calculatedMinTotal + 1)
+                : Math.max(totalElements, calculatedMinTotal);
+
+            const adjustedTotalPages = Math.ceil(adjustedTotal / responseSize);
+
+            // Return full paged response
+            return {
+                content: mappedReports,
+                page: responsePage,
+                size: responseSize,
+                totalElements: adjustedTotal,
+                totalPages: adjustedTotalPages,
+            };
         } catch (error) {
             console.error('Error fetching admin reports:', error);
-            // Return empty array instead of mock data to clearly show the error
-            return [];
+            // Return empty paged response
+            return {
+                content: [],
+                page: 0,
+                size: size,
+                totalElements: 0,
+                totalPages: 0,
+            };
         }
     },
 
@@ -153,10 +188,30 @@ export const dashboardService = {
     /**
      * Get reports for the current employee
      * GET /api/reports
-     * @returns Array of reports belonging to the current user
+     * @param page - Page number (0-indexed)
+     * @param size - Number of items per page
+     * @param filters - Optional filters for status and search
+     * @returns Paged response with reports and metadata
      */
-    async getMyReports(): Promise<EmployeeReport[]> {
+    async getMyReports(page: number = 0, size: number = 3, filters?: ReportFilters): Promise<PagedEmployeeReports> {
         try {
+            let url = '/api/reports';
+            const params = new URLSearchParams();
+
+            // Add pagination parameters
+            params.append('page', page.toString());
+            params.append('size', size.toString());
+
+            // Add filters if provided
+            if (filters?.status) {
+                params.append('status', filters.status);
+            }
+            if (filters?.search) {
+                params.append('query', filters.search);
+            }
+
+            url += `?${params.toString()}`;
+
             // Backend response structure for employee reports
             interface BackendReport {
                 reportId: string;
@@ -171,41 +226,70 @@ export const dashboardService = {
                 sentAt?: string;
             }
 
-            // Backend puede devolver array directo O respuesta paginada
-            interface PaginatedResponse {
-                content: BackendReport[];
-                page: number;
-                size: number;
-                totalElements: number;
-                totalPages: number;
-            }
+            // Backend paginated response (loose typing to handle variations)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const response = await apiClient.get<any>(url);
+            console.log('My reports response (Employee):', response);
 
-            const response = await apiClient.get<BackendReport[] | PaginatedResponse>('/api/reports');
-            console.log('My reports response:', response);
-
-            // Extraer el array de reportes (soporta array directo o paginado)
-            const reportsArray: BackendReport[] = Array.isArray(response)
-                ? response
-                : (response?.content || []);
+            // Robustly map pagination fields
+            const responsePage = response.page ?? response.number ?? 0;
+            const responseSize = response.size ?? 3;
+            const totalElements = response.totalElements ?? response.total ?? response.total_elements ?? 0;
+            const totalPages = response.totalPages ?? response.total_pages ?? 0;
+            const content = response.content ?? response.data ?? [];
 
             // Map backend fields to frontend format
-            const mappedReports: EmployeeReport[] = reportsArray.map((item) => ({
-                id: item.reportId,
-                title: item.title || 'Sin título',
-                description: item.description || '',
-                activities: item.activities,
-                objective: item.objective,
-                evidencieLink: item.evidencieLink,
-                status: mapBackendStatus(item.status || 'DRAFT'),
-                createdAt: item.createdAt || new Date().toISOString(),
-                updatedAt: item.updatedAt,
-                sentAt: item.sentAt,
-            }));
+            const mappedReports: EmployeeReport[] = Array.isArray(content)
+                ? content.map((item: BackendReport) => ({
+                    id: item.reportId,
+                    title: item.title || 'Sin título',
+                    description: item.description || '',
+                    activities: item.activities,
+                    objective: item.objective,
+                    evidencieLink: item.evidencieLink,
+                    status: mapBackendStatus(item.status || 'DRAFT'),
+                    createdAt: item.createdAt || new Date().toISOString(),
+                    updatedAt: item.updatedAt,
+                    sentAt: item.sentAt,
+                }))
+                : [];
 
-            return mappedReports;
+            console.log('Pagination Metadata (Employee):', { page: responsePage, size: responseSize, totalElements, totalPages });
+
+            /**
+             * SMART PAGINATION FIX (Backend Workaround)
+             * The backend is returning wrong totalElements (e.g., 3 instead of 15).
+             * Logic: If we received a full page of results (content.length === size),
+             * we assume there is at least one more page available.
+             */
+            const currentCount = mappedReports.length;
+            const calculatedMinTotal = (responsePage * responseSize) + currentCount;
+
+            // If full page received, ensure total allows for next page
+            const adjustedTotal = (currentCount >= responseSize)
+                ? Math.max(totalElements, calculatedMinTotal + 1)
+                : Math.max(totalElements, calculatedMinTotal);
+
+            const adjustedTotalPages = Math.ceil(adjustedTotal / responseSize);
+
+            // Return full paged response
+            return {
+                content: mappedReports,
+                page: responsePage,
+                size: responseSize,
+                totalElements: adjustedTotal,
+                totalPages: adjustedTotalPages,
+            };
         } catch (error) {
             console.error('Error fetching my reports:', error);
-            return [];
+            // Return empty paged response
+            return {
+                content: [],
+                page: 0,
+                size: size,
+                totalElements: 0,
+                totalPages: 0,
+            };
         }
     },
 };
