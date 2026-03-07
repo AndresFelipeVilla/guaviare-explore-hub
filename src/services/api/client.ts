@@ -56,17 +56,53 @@ async function request<T>(endpoint: string, options: RequestOptions): Promise<T>
             body: options.body ? JSON.stringify(options.body) : undefined,
         });
 
-
         // Handle non-OK responses
         if (!response.ok) {
             let errorMessage = 'An error occurred';
             let errorData: AuthError | null = null;
 
             try {
-                errorData = await response.json();
-                errorMessage = errorData.message || `Error: ${response.status} ${response.statusText}`;
+                const text = await response.text();
+                try {
+                    const parsed = JSON.parse(text);
+                    errorData = parsed;
+                    // Try common error response field names
+                    if (parsed.message) {
+                        errorMessage = parsed.message;
+                    } else if (parsed.error && typeof parsed.error === 'string' && !parsed.status) {
+                        errorMessage = parsed.error;
+                    } else if (parsed.detail) {
+                        errorMessage = parsed.detail;
+                    } else if (Array.isArray(parsed.errors)) {
+                        errorMessage = parsed.errors.map((e: any) => e.message || e.defaultMessage || e).join('. ');
+                    } else if (typeof parsed === 'string') {
+                        errorMessage = parsed;
+                    } else {
+                        // Spring Boot @Valid Map<String, String> format: { "fieldName": "error message", ... }
+                        // Check if it's a flat object with only string values (no nested objects)
+                        const values = Object.values(parsed).filter((v): v is string => typeof v === 'string' && v.length > 0);
+                        const keys = Object.keys(parsed);
+                        const isFieldErrorMap = values.length > 0 && keys.every(k => typeof parsed[k] === 'string' || typeof parsed[k] === 'number');
+                        if (isFieldErrorMap && values.length > 0) {
+                            // Filter out standard HTTP fields (status, error, path, timestamp) that Spring Boot adds
+                            const skipKeys = ['status', 'error', 'path', 'timestamp'];
+                            const fieldErrors = Object.entries(parsed)
+                                .filter(([key, val]) => !skipKeys.includes(key) && typeof val === 'string')
+                                .map(([, val]) => val as string);
+                            errorMessage = fieldErrors.length > 0
+                                ? fieldErrors.join('. ')
+                                : `Error: ${response.status} ${response.statusText}`;
+                        } else {
+                            errorMessage = `Error: ${response.status} ${response.statusText}`;
+                        }
+                    }
+                } catch {
+                    // Response is not JSON — use the raw text as the error message
+                    errorMessage = text || `Error: ${response.status} ${response.statusText}`;
+                }
             } catch {
-                errorMessage = `Error: ${response.status} ${response.statusText}`;
+                // text() failed — use generic message
+                errorMessage = `Error: ${response.status}`;
             }
 
             throw new ApiError(

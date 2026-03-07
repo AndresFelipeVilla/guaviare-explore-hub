@@ -5,7 +5,7 @@ import { validateEmployeeRegistrationForm } from '@/services/validators';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Users, Loader2 } from 'lucide-react';
+import { Users, Loader2, AlertCircle } from 'lucide-react';
 
 export default function EmployeeRegistrationForm() {
     const navigate = useNavigate();
@@ -18,6 +18,7 @@ export default function EmployeeRegistrationForm() {
         managerBossCode: '',
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [generalError, setGeneralError] = useState<string>('');
 
     const registerMutation = useRegisterEmployee();
 
@@ -31,11 +32,15 @@ export default function EmployeeRegistrationForm() {
                 return newErrors;
             });
         }
+        if (generalError) {
+            setGeneralError('');
+        }
     };
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
         setErrors({});
+        setGeneralError('');
 
         // Validate form
         const validation = validateEmployeeRegistrationForm(formData);
@@ -54,11 +59,23 @@ export default function EmployeeRegistrationForm() {
                 // Redirect to dashboard after successful registration
                 navigate('/dashboard');
             },
+            onError: (error) => {
+                const errorMessage = error.message || 'Error al registrar. Verifique su conexión e intente nuevamente.';
+                setGeneralError(errorMessage);
+            },
         });
     };
 
     return (
         <form onSubmit={handleSubmit} className="space-y-2.5">
+            {/* General Error Message */}
+            {generalError && (
+                <div className="p-2 rounded-lg bg-red-50 border border-red-200 flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-red-800">{generalError}</p>
+                </div>
+            )}
+
             {/* Name Field */}
             <div className="space-y-0.5">
                 <Label htmlFor="emp-name" className="text-xs font-medium" style={{ color: 'hsl(168, 75%, 15%)' }}>

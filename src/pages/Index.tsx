@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { MessageCircle, FileText, Users, Bot, Upload, Eye } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
@@ -11,8 +12,47 @@ import reportsMockup from "@/assets/reports-dashboard-mockup.png";
 import videoSrc from "@/assets/video.mp4";
 
 const Index = () => {
+  // Inyectar el widget de ElevenLabs solo en la landing page
+  useEffect(() => {
+    // Crear el elemento del widget
+    const widget = document.createElement('elevenlabs-convai');
+    widget.setAttribute('agent-id', 'agent_5301kg0q7v55ehb9cn082yjmd3eq');
+    document.body.appendChild(widget);
+
+    // Cargar el script del widget
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
+    script.async = true;
+    script.type = 'text/javascript';
+    document.body.appendChild(script);
+
+    // Limpiar al desmontar el componente (al salir de la landing page)
+    return () => {
+      widget.remove();
+      script.remove();
+    };
+  }, []);
   const handleChatbotAccess = () => {
-    window.location.href = "/chatbot";
+    // Abrir el widget de ElevenLabs Convai
+    const widget = document.querySelector('elevenlabs-convai') as any;
+
+    if (widget) {
+      // Intentar abrir el widget
+      if (typeof widget.open === 'function') {
+        widget.open();
+      } else if (widget.shadowRoot) {
+        // Si el widget usa Shadow DOM, intentar encontrar el botón de abrir
+        const openButton = widget.shadowRoot.querySelector('[data-testid="widget-button"]') ||
+          widget.shadowRoot.querySelector('button');
+        if (openButton) {
+          (openButton as HTMLElement).click();
+        }
+      }
+      // Si nada funciona, simular un click en el elemento del widget
+      widget.click();
+    } else {
+      console.warn('ElevenLabs widget no encontrado. Asegúrate de que el script se haya cargado.');
+    }
   };
 
   const handleReportsAccess = () => {

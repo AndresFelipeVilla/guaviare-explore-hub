@@ -58,7 +58,7 @@ export default function LoginForm() {
             // Nuevo: Manejo de error de API (ej. credenciales inválidas)
             onError: (error: any) => {
                 setErrors({
-                    root: error?.response?.data?.message || 'Error al iniciar sesión. Verifique sus credenciales.'
+                    root: error.message || 'Error al iniciar sesión. Verifique sus credenciales.'
                 });
             }
         });

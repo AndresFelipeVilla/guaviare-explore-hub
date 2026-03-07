@@ -14,18 +14,18 @@ const TouristSites = () => {
     const yTop = useTransform(scrollYProgress, [0, 1], [100, -100]);
     const yBottom = useTransform(scrollYProgress, [0, 1], [150, -150]);
 
-    // Placeholder images form Unsplash
+    // Imágenes reales de destinos turísticos del Guaviare
     const topImages = [
-        "https://images.unsplash.com/photo-1596328766158-6932599264c1?q=80&w=600&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1534067783865-9c5978f8cb0a?q=80&w=600&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1598556776374-2c7c5a9633e9?q=80&w=600&auto=format&fit=crop",
+        "/images/destinos/cano-cristales.png",
+        "/images/destinos/ciudad-de-piedra.jpg",
+        "/images/destinos/pinturas-rupestres.jpg",
     ];
 
     const bottomImages = [
-        "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?q=80&w=600&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?q=80&w=600&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1501854140884-074bf6bfa8fb?q=80&w=600&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1623941000840-77a829cb8c55?q=80&w=600&auto=format&fit=crop",
+        "/images/destinos/cerros-mavekure.jpg",
+        "/images/destinos/las-yuntas.jpg",
+        "/images/destinos/pozo-naranja.jpg",
+        "/images/destinos/pozo-verde.jpg",
     ];
 
     // Animation Variants
@@ -108,7 +108,7 @@ const TouristSites = () => {
                                     initial={{ opacity: 0, scale: 0.8 }}
                                     whileInView={{ opacity: 1, scale: 1 }}
                                     viewport={{ once: true }}
-                                    transition={{ duration: 0.6, delay: i * 0.1 }}
+                                    transition={{ duration: 0.4, delay: i * 0.08 }}
                                     whileHover={{ scale: 1.05, rotate: 2 }}
                                     className="relative group overflow-hidden rounded-2xl shadow-lg w-28 h-28 md:w-36 md:h-36 lg:w-40 lg:h-40 xl:w-44 xl:h-44 cursor-pointer border-2 border-white bg-white"
                                 >
@@ -129,7 +129,7 @@ const TouristSites = () => {
                                     initial={{ opacity: 0, scale: 0.8 }}
                                     whileInView={{ opacity: 1, scale: 1 }}
                                     viewport={{ once: true }}
-                                    transition={{ duration: 0.6, delay: (i + 3) * 0.1 }}
+                                    transition={{ duration: 0.4, delay: (i + 3) * 0.08 }}
                                     whileHover={{ scale: 1.05, rotate: -2 }}
                                     className="relative group overflow-hidden rounded-2xl shadow-lg w-24 h-24 md:w-32 md:h-32 lg:w-36 lg:h-36 xl:w-40 xl:h-40 cursor-pointer border-2 border-white bg-white"
                                 >
