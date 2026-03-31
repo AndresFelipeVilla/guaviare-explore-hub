@@ -11,15 +11,13 @@ import { UserProfile, ReportSummary, AdminReport, ReportsStats, ReportFilters, R
 function mapBackendStatus(backendStatus: string): ReportStatus {
     const statusMap: Record<string, ReportStatus> = {
         'ENVIADO': 'SENT',
-        'REVISADO': 'REVIEWED',
         'APROBADO': 'APPROVED',
-        'RECHAZADO': 'REJECTED',
+        'DEVUELTO': 'RETURNED',
         'BORRADOR': 'DRAFT',
         // Also support English values in case backend changes
         'SENT': 'SENT',
-        'REVIEWED': 'REVIEWED',
         'APPROVED': 'APPROVED',
-        'REJECTED': 'REJECTED',
+        'RETURNED': 'RETURNED',
         'DRAFT': 'DRAFT',
     };
 
@@ -178,9 +176,8 @@ export const dashboardService = {
                 total: 24,
                 draft: 3,
                 sent: 8,
-                reviewed: 5,
                 approved: 6,
-                rejected: 2,
+                returned: 2,
             };
         }
     },
@@ -248,6 +245,7 @@ export const dashboardService = {
                     objective: item.objective,
                     evidencieLink: item.evidencieLink,
                     status: mapBackendStatus(item.status || 'DRAFT'),
+                    observation: (item as BackendReport & { observation?: string }).observation,
                     createdAt: item.createdAt || new Date().toISOString(),
                     updatedAt: item.updatedAt,
                     sentAt: item.sentAt,

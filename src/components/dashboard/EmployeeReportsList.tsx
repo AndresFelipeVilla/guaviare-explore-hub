@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Filter, ChevronDown, Edit3, Trash2, Eye, FileText, Loader2 } from 'lucide-react';
+import { Search, Filter, ChevronDown, Edit3, Trash2, Eye, FileText, Loader2, MessageSquare, RotateCcw } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import { toast } from 'sonner';
 import { EmployeeReport, ReportStatus } from '@/types/dashboard';
@@ -18,6 +18,7 @@ interface EmployeeReportCardProps {
 
 export function EmployeeReportCard({ report, userName, onEdit, onDelete, onView }: EmployeeReportCardProps) {
     const isDraft = report.status === 'DRAFT';
+    const isReturned = report.status === 'RETURNED';
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
     // Format date
@@ -95,6 +96,17 @@ export function EmployeeReportCard({ report, userName, onEdit, onDelete, onView 
                 </p>
             </div>
 
+            {/* Observation callout for RETURNED reports */}
+            {isReturned && report.observation && (
+                <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 flex items-start gap-2">
+                    <MessageSquare className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="text-xs font-semibold text-amber-700 mb-0.5">Observación del jefe:</p>
+                        <p className="text-sm text-amber-800 leading-relaxed">{report.observation}</p>
+                    </div>
+                </div>
+            )}
+
             {/* Actions */}
             <div className="flex items-center gap-3">
                 {isDraft ? (
@@ -112,6 +124,23 @@ export function EmployeeReportCard({ report, userName, onEdit, onDelete, onView 
                         >
                             <Trash2 className="w-4 h-4" />
                             Descartar Borrador
+                        </button>
+                    </>
+                ) : isReturned ? (
+                    <>
+                        <button
+                            onClick={() => onEdit?.(report.id)}
+                            className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors"
+                        >
+                            <RotateCcw className="w-4 h-4" />
+                            Corregir y Reenviar
+                        </button>
+                        <button
+                            onClick={() => onView?.(report.id)}
+                            className="flex items-center gap-2 px-4 py-2 bg-transparent border border-gray-300 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                        >
+                            <Eye className="w-4 h-4" />
+                            Ver Detalles
                         </button>
                     </>
                 ) : (
@@ -166,9 +195,8 @@ const statusOptions: { value: ReportStatus | 'ALL'; label: string }[] = [
     { value: 'ALL', label: 'Todos los Estados' },
     { value: 'DRAFT', label: 'Borrador' },
     { value: 'SENT', label: 'Enviado' },
-    { value: 'REVIEWED', label: 'Revisado' },
     { value: 'APPROVED', label: 'Aprobado' },
-    { value: 'REJECTED', label: 'Rechazado' },
+    { value: 'RETURNED', label: 'Devuelto' },
 ];
 
 export default function EmployeeReportsList({

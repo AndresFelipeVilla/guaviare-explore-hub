@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Save, Send, Edit3, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+import { Save, Send, Edit3, ArrowLeft, Loader2, AlertCircle, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import Sidebar from '@/components/dashboard/Sidebar';
 import { authService } from '@/services/api/authService';
@@ -50,6 +50,8 @@ export default function CreateReport() {
     const [reportId, setReportId] = useState<string | null>(urlReportId || null);
     const [isSaved, setIsSaved] = useState(isEditMode);
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isReturned, setIsReturned] = useState(false);
+    const [returnedObservation, setReturnedObservation] = useState<string | undefined>(undefined);
 
     // Loading states
     const [isSaving, setIsSaving] = useState(false);
@@ -67,14 +69,24 @@ export default function CreateReport() {
         if (existingReport) {
             console.log('Existing report data for editing:', existingReport);
 
-            // Check if report is DRAFT (editable) - handle both English and Spanish status values
+            // Allow editing of BORRADOR and DEVUELTO reports
             const statusUpperCase = existingReport.status?.toUpperCase();
-            const isDraft = statusUpperCase === 'DRAFT' || statusUpperCase === 'BORRADOR';
+            const isEditable =
+                statusUpperCase === 'DRAFT' ||
+                statusUpperCase === 'BORRADOR' ||
+                statusUpperCase === 'RETURNED' ||
+                statusUpperCase === 'DEVUELTO';
 
-            if (!isDraft) {
-                toast.error('Solo se pueden editar borradores');
+            if (!isEditable) {
+                toast.error('Solo se pueden editar informes en estado Borrador o Devuelto');
                 navigate('/dashboard/mis-informes');
                 return;
+            }
+
+            const returned = statusUpperCase === 'RETURNED' || statusUpperCase === 'DEVUELTO';
+            setIsReturned(returned);
+            if (returned) {
+                setReturnedObservation(existingReport.observation);
             }
 
             setFormData({
@@ -173,10 +185,38 @@ export default function CreateReport() {
         }
     };
 
-    // Handle submit
+    // Handle submit (also used as re-submit for DEVUELTO)
     const handleSubmit = async () => {
         if (!reportId) {
             toast.error('Primero debes guardar el informe');
+            return;
+        }
+
+        // For DEVUELTO: save first, then submit
+        if (isReturned) {
+            if (!validateForm()) {
+                toast.error('Por favor, completa todos los campos correctamente');
+                return;
+            }
+            setIsSubmitting(true);
+            try {
+                await reportService.updateReport(reportId, {
+                    title: formData.title.trim(),
+                    description: formData.description.trim(),
+                    activities: formData.activities.trim(),
+                    objective: formData.objective.trim(),
+                    evidencieLink: formData.evidencieLink.trim(),
+                });
+                await reportService.submitReport(reportId);
+                setIsSubmitted(true);
+                toast.success('Informe corregido y reenviado exitosamente');
+                setTimeout(() => navigate('/dashboard/mis-informes'), 1500);
+            } catch (error) {
+                console.error('Error re-submitting report:', error);
+                toast.error('Error al reenviar el informe. Por favor, intenta de nuevo.');
+            } finally {
+                setIsSubmitting(false);
+            }
             return;
         }
 
@@ -243,6 +283,22 @@ export default function CreateReport() {
                         </span>
                     )}
                 </header>
+
+                {/* Observation banner for DEVUELTO reports */}
+                {isReturned && returnedObservation && (
+                    <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+                        <MessageSquare className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <p className="text-sm font-semibold text-amber-700 mb-1">
+                                Tu jefe devolvió este informe con la siguiente observación:
+                            </p>
+                            <p className="text-sm text-amber-800 leading-relaxed">{returnedObservation}</p>
+                            <p className="mt-1.5 text-xs text-amber-600">
+                                Corrige lo necesario y usa <strong>"Guardar y Reenviar"</strong> cuando esté listo.
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 {/* Loading state for edit mode */}
                 {isLoadingReport && (
@@ -415,7 +471,10 @@ export default function CreateReport() {
                                     ) : (
                                         <Send className="w-5 h-5" />
                                     )}
-                                    {isSubmitting ? 'Enviando...' : 'Enviar'}
+                                    {isSubmitting
+                                        ? (isReturned ? 'Reenviando...' : 'Enviando...')
+                                        : (isReturned ? 'Guardar y Reenviar' : 'Enviar')
+                                    }
                                 </button>
 
                                 {/* Continue Editing indicator - Shows after save */}

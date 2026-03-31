@@ -6,6 +6,7 @@ import {
     UpdateReportResponse,
     SubmitReportResponse,
     ReportDetailsResponse,
+    ReturnReportRequest,
     Report,
 } from '@/types/report';
 
@@ -61,7 +62,7 @@ export const reportService = {
      * Get report details for "Ver Detalles" page
      * GET /api/reports/details/{reportId}
      * @param reportId - ID of the report to fetch
-     * @returns Report details including responsible, status, dates
+     * @returns Report details including responsible, status, observation, dates
      */
     async getReportDetails(reportId: string): Promise<ReportDetailsResponse> {
         const response = await apiClient.get<ReportDetailsResponse>(`/api/reports/details/${reportId}`);
@@ -78,5 +79,27 @@ export const reportService = {
         const response = await apiClient.get<Report>(`/api/reports/${reportId}`);
         return response;
     },
-};
 
+    /**
+     * Approve a report (JEFE only)
+     * PATCH /api/reports/{reportId}/approve
+     * @param reportId - ID of the report to approve
+     * @returns Updated report details with status APROBADO
+     */
+    async approveReport(reportId: string): Promise<ReportDetailsResponse> {
+        const response = await apiClient.patch<ReportDetailsResponse>(`/api/reports/${reportId}/approve`);
+        return response;
+    },
+
+    /**
+     * Return a report with an observation (JEFE only)
+     * POST /api/reports/{reportId}/return
+     * @param reportId - ID of the report to return
+     * @param data - Observation text required
+     * @returns Updated report details with status DEVUELTO and observation populated
+     */
+    async returnReport(reportId: string, data: ReturnReportRequest): Promise<ReportDetailsResponse> {
+        const response = await apiClient.post<ReportDetailsResponse>(`/api/reports/${reportId}/return`, data);
+        return response;
+    },
+};

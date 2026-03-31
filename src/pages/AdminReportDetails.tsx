@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, FileDown, Loader2, AlertCircle, Calendar, User, FileText, Clock } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, FileDown, Loader2, AlertCircle, Calendar, User, FileText, Clock, CheckCircle, RotateCcw, MessageSquare } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import AdminSidebar from '@/components/dashboard/AdminSidebar';
 import StatusBadge from '@/components/dashboard/StatusBadge';
@@ -15,7 +15,12 @@ import { ReportStatus } from '@/types/dashboard';
 
 export default function AdminReportDetails() {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const { reportId } = useParams<{ reportId: string }>();
+
+    // Return modal state
+    const [returnModalOpen, setReturnModalOpen] = useState(false);
+    const [observation, setObservation] = useState('');
 
     // Get stored user data as initial fallback
     const storedUser = authService.getUser();
@@ -46,6 +51,34 @@ export default function AdminReportDetails() {
         queryKey: ['reportDetails', reportId],
         queryFn: () => reportService.getReportDetails(reportId!),
         enabled: !!reportId && authService.isAuthenticated(),
+    });
+
+    // Approve mutation
+    const approveMutation = useMutation({
+        mutationFn: () => reportService.approveReport(reportId!),
+        onSuccess: () => {
+            toast.success('Informe aprobado exitosamente');
+            queryClient.invalidateQueries({ queryKey: ['reportDetails', reportId] });
+            queryClient.invalidateQueries({ queryKey: ['adminReports'] });
+        },
+        onError: () => {
+            toast.error('Error al aprobar el informe. Por favor, intenta de nuevo.');
+        },
+    });
+
+    // Return mutation
+    const returnMutation = useMutation({
+        mutationFn: () => reportService.returnReport(reportId!, { observation }),
+        onSuccess: () => {
+            toast.success('Informe devuelto con observación');
+            setReturnModalOpen(false);
+            setObservation('');
+            queryClient.invalidateQueries({ queryKey: ['reportDetails', reportId] });
+            queryClient.invalidateQueries({ queryKey: ['adminReports'] });
+        },
+        onError: () => {
+            toast.error('Error al devolver el informe. Por favor, intenta de nuevo.');
+        },
     });
 
     // Use API data if available, otherwise use stored data
@@ -85,14 +118,12 @@ export default function AdminReportDetails() {
         const statusMap: Record<string, ReportStatus> = {
             'ENVIADO': 'SENT',
             'BORRADOR': 'DRAFT',
-            'REVISADO': 'REVIEWED',
             'APROBADO': 'APPROVED',
-            'RECHAZADO': 'REJECTED',
+            'DEVUELTO': 'RETURNED',
             'SENT': 'SENT',
             'DRAFT': 'DRAFT',
-            'REVIEWED': 'REVIEWED',
             'APPROVED': 'APPROVED',
-            'REJECTED': 'REJECTED',
+            'RETURNED': 'RETURNED',
         };
         return statusMap[status?.toUpperCase()] || 'SENT';
     };
@@ -104,12 +135,10 @@ export default function AdminReportDetails() {
             'BORRADOR': 'Borrador',
             'SENT': 'Enviado',
             'ENVIADO': 'Enviado',
-            'REVIEWED': 'Revisado',
-            'REVISADO': 'Revisado',
             'APPROVED': 'Aprobado',
             'APROBADO': 'Aprobado',
-            'REJECTED': 'Rechazado',
-            'RECHAZADO': 'Rechazado',
+            'RETURNED': 'Devuelto',
+            'DEVUELTO': 'Devuelto',
         };
         return labelMap[status?.toUpperCase()] || status;
     };
@@ -148,11 +177,14 @@ export default function AdminReportDetails() {
         }
     };
 
-
     // Handle back navigation - goes back to admin reports list
     const handleBack = () => {
         navigate('/admin/informes');
     };
+
+    const isSent = report && mapStatus(report.status) === 'SENT';
+    const isApproved = report && mapStatus(report.status) === 'APPROVED';
+    const isReturned = report && mapStatus(report.status) === 'RETURNED';
 
     return (
         <div className="flex h-screen bg-gray-50 overflow-hidden">
@@ -261,6 +293,17 @@ export default function AdminReportDetails() {
                                 </p>
                             </div>
 
+                            {/* Observation from boss (if RETURNED) */}
+                            {isReturned && report.observation && (
+                                <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+                                    <MessageSquare className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <h4 className="text-sm font-semibold text-amber-700 mb-1">Observación registrada:</h4>
+                                        <p className="text-sm text-amber-800 leading-relaxed">{report.observation}</p>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Info Grid */}
                             <div className="grid md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
                                 {/* Responsible */}
@@ -326,24 +369,131 @@ export default function AdminReportDetails() {
                         </div>
 
                         {/* Footer Actions */}
-                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
+                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between gap-3">
                             <button
                                 onClick={handleBack}
                                 className="px-4 py-2 text-gray-600 font-medium rounded-lg hover:bg-gray-100 transition-colors"
                             >
                                 Volver
                             </button>
-                            <button
-                                onClick={handleGeneratePDF}
-                                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors"
-                            >
-                                <FileDown className="w-4 h-4" />
-                                Generar PDF
-                            </button>
+
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={handleGeneratePDF}
+                                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                                >
+                                    <FileDown className="w-4 h-4" />
+                                    Generar PDF
+                                </button>
+
+                                {/* JEFE actions — only shown when report is ENVIADO */}
+                                {isSent && (
+                                    <>
+                                        <button
+                                            onClick={() => setReturnModalOpen(true)}
+                                            disabled={approveMutation.isPending || returnMutation.isPending}
+                                            className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50"
+                                        >
+                                            <RotateCcw className="w-4 h-4" />
+                                            Devolver
+                                        </button>
+                                        <button
+                                            onClick={() => approveMutation.mutate()}
+                                            disabled={approveMutation.isPending || returnMutation.isPending}
+                                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                                        >
+                                            {approveMutation.isPending ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <CheckCircle className="w-4 h-4" />
+                                            )}
+                                            {approveMutation.isPending ? 'Aprobando...' : 'Aprobar'}
+                                        </button>
+                                    </>
+                                )}
+
+                                {/* Terminal states — show contextual labels */}
+                                {isApproved && (
+                                    <span className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 font-medium rounded-lg border border-emerald-200">
+                                        <CheckCircle className="w-4 h-4" />
+                                        Informe Aprobado
+                                    </span>
+                                )}
+
+                                {isReturned && (
+                                    <span className="flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-700 font-medium rounded-lg border border-amber-200">
+                                        <RotateCcw className="w-4 h-4" />
+                                        Informe Devuelto
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
             </main>
+
+            {/* Return Modal */}
+            {returnModalOpen && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl p-6 max-w-lg w-full shadow-xl">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 bg-amber-100 rounded-lg">
+                                <MessageSquare className="w-5 h-5 text-amber-600" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-800">
+                                Devolver informe con observación
+                            </h3>
+                        </div>
+                        <p className="text-gray-600 text-sm mb-4">
+                            El empleado podrá ver tu observación y corregir el informe antes de reenviarlo.
+                        </p>
+                        <div className="mb-5">
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                Observación <span className="text-red-500">*</span>
+                            </label>
+                            <textarea
+                                value={observation}
+                                onChange={(e) => setObservation(e.target.value)}
+                                placeholder="Describe qué debe corregir el empleado..."
+                                rows={4}
+                                className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all text-sm resize-none"
+                            />
+                            {observation.trim().length === 0 && (
+                                <p className="mt-1 text-xs text-gray-400">La observación es obligatoria para devolver el informe.</p>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-3 justify-end">
+                            <button
+                                onClick={() => {
+                                    setReturnModalOpen(false);
+                                    setObservation('');
+                                }}
+                                disabled={returnMutation.isPending}
+                                className="px-4 py-2 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => returnMutation.mutate()}
+                                disabled={returnMutation.isPending || observation.trim().length === 0}
+                                className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50"
+                            >
+                                {returnMutation.isPending ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Enviando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <RotateCcw className="w-4 h-4" />
+                                        Confirmar devolución
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

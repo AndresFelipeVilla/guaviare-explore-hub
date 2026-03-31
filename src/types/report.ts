@@ -72,7 +72,7 @@ export interface Report {
     activities: string;
     objective: string;
     evidencieLink: string;
-    status: 'DRAFT' | 'SENT' | 'REVIEWED' | 'APPROVED' | 'REJECTED';
+    status: 'DRAFT' | 'SENT' | 'REVIEWED' | 'APPROVED' | 'RETURNED';
     createdAt: string;
     updatedAt?: string;
     submittedAt?: string;
@@ -90,8 +90,15 @@ export interface ReportDetailsResponse {
     objective: string;
     evidencieLink: string;
     responsible: string;
-    status: 'DRAFT' | 'SENT' | 'REVIEWED' | 'APPROVED' | 'REJECTED';
+    status: 'DRAFT' | 'SENT' | 'REVIEWED' | 'APPROVED' | 'RETURNED';
+    observation?: string;
     sentAt?: string;
     updatedAt?: string;
 }
 
+/**
+ * Request payload for returning a report with an observation
+ */
+export interface ReturnReportRequest {
+    observation: string;
+}

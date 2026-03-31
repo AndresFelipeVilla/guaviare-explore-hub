@@ -20,9 +20,8 @@ interface ReportsTableProps {
 const statusOptions: { value: ReportStatus | 'ALL'; label: string }[] = [
     { value: 'ALL', label: 'Todos los estados' },
     { value: 'SENT', label: 'Enviado' },
-    { value: 'REVIEWED', label: 'Revisado' },
     { value: 'APPROVED', label: 'Aprobado' },
-    { value: 'REJECTED', label: 'Rechazado' },
+    { value: 'RETURNED', label: 'Devuelto' },
     { value: 'DRAFT', label: 'Borrador' },
 ];
 

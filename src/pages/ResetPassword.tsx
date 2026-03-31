@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 
-const API_BASE_URL = "http://localhost:8084/api/auth/password-recovery";
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/auth/password-recovery`;
 
 type ResetStep = "request" | "confirm";
 

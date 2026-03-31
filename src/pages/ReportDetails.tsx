@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Moon, Sun, ArrowLeft, FileDown, Loader2, AlertCircle, Calendar, User, FileText, Clock } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Moon, Sun, ArrowLeft, FileDown, Loader2, AlertCircle, Calendar, User, FileText, Clock, Send, MessageSquare } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import Sidebar from '@/components/dashboard/Sidebar';
 import ReportPDF from '@/components/pdf/ReportPDF';
@@ -14,6 +14,7 @@ import { ReportStatus } from '@/types/dashboard';
 
 export default function ReportDetails() {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const { reportId } = useParams<{ reportId: string }>();
     const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -39,6 +40,19 @@ export default function ReportDetails() {
         queryKey: ['reportDetails', reportId],
         queryFn: () => reportService.getReportDetails(reportId!),
         enabled: !!reportId && authService.isAuthenticated(),
+    });
+
+    // Re-submit mutation (for RETURNED reports)
+    const submitMutation = useMutation({
+        mutationFn: () => reportService.submitReport(reportId!),
+        onSuccess: () => {
+            toast.success('Informe reenviado exitosamente. Ahora está en revisión.');
+            queryClient.invalidateQueries({ queryKey: ['reportDetails', reportId] });
+            queryClient.invalidateQueries({ queryKey: ['myReports'] });
+        },
+        onError: () => {
+            toast.error('Error al reenviar el informe. Por favor, intenta de nuevo.');
+        },
     });
 
     // Use API data if available, otherwise use stored data
@@ -78,14 +92,12 @@ export default function ReportDetails() {
         const statusMap: Record<string, ReportStatus> = {
             'ENVIADO': 'SENT',
             'BORRADOR': 'DRAFT',
-            'REVISADO': 'REVIEWED',
             'APROBADO': 'APPROVED',
-            'RECHAZADO': 'REJECTED',
+            'DEVUELTO': 'RETURNED',
             'SENT': 'SENT',
             'DRAFT': 'DRAFT',
-            'REVIEWED': 'REVIEWED',
             'APPROVED': 'APPROVED',
-            'REJECTED': 'REJECTED',
+            'RETURNED': 'RETURNED',
         };
         return statusMap[status?.toUpperCase()] || 'SENT';
     };
@@ -97,16 +109,13 @@ export default function ReportDetails() {
             'BORRADOR': 'Borrador',
             'SENT': 'Enviado',
             'ENVIADO': 'Enviado',
-            'REVIEWED': 'Revisado',
-            'REVISADO': 'Revisado',
             'APPROVED': 'Aprobado',
             'APROBADO': 'Aprobado',
-            'REJECTED': 'Rechazado',
-            'RECHAZADO': 'Rechazado',
+            'RETURNED': 'Devuelto',
+            'DEVUELTO': 'Devuelto',
         };
         return labelMap[status?.toUpperCase()] || status;
     };
-
 
 
     // Handle PDF generation
@@ -147,6 +156,8 @@ export default function ReportDetails() {
     const handleBack = () => {
         navigate('/dashboard/mis-informes');
     };
+
+    const isReturned = report && mapStatus(report.status) === 'RETURNED';
 
     return (
         <div className="flex h-screen bg-gray-50 overflow-hidden">
@@ -255,6 +266,24 @@ export default function ReportDetails() {
 
                         {/* Content Section */}
                         <div className="p-6 space-y-6">
+                            {/* Observation callout (DEVUELTO) */}
+                            {isReturned && report.observation && (
+                                <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+                                    <MessageSquare className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <h4 className="text-sm font-semibold text-amber-700 mb-1">
+                                            Tu jefe devolvió este informe con la siguiente observación:
+                                        </h4>
+                                        <p className="text-sm text-amber-800 leading-relaxed">
+                                            {report.observation}
+                                        </p>
+                                        <p className="mt-2 text-xs text-amber-600">
+                                            Edita el informe y usa el botón <strong>Reenviar</strong> cuando esté listo.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Description */}
                             <div>
                                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">
@@ -330,20 +359,39 @@ export default function ReportDetails() {
                         </div>
 
                         {/* Footer Actions */}
-                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
+                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between gap-3">
                             <button
                                 onClick={handleBack}
                                 className="px-4 py-2 text-gray-600 font-medium rounded-lg hover:bg-gray-100 transition-colors"
                             >
                                 Volver
                             </button>
-                            <button
-                                onClick={handleGeneratePDF}
-                                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors"
-                            >
-                                <FileDown className="w-4 h-4" />
-                                Generar PDF
-                            </button>
+
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={handleGeneratePDF}
+                                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                                >
+                                    <FileDown className="w-4 h-4" />
+                                    Generar PDF
+                                </button>
+
+                                {/* Reenviar — only for DEVUELTO reports */}
+                                {isReturned && (
+                                    <button
+                                        onClick={() => submitMutation.mutate()}
+                                        disabled={submitMutation.isPending}
+                                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                                    >
+                                        {submitMutation.isPending ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            <Send className="w-4 h-4" />
+                                        )}
+                                        {submitMutation.isPending ? 'Reenviando...' : 'Reenviar informe'}
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}

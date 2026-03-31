@@ -28,15 +28,14 @@ export interface LatestReportsResponse {
 // ============================================
 
 // Estados posibles de un informe
-export type ReportStatus = 'DRAFT' | 'SENT' | 'REVIEWED' | 'APPROVED' | 'REJECTED';
+export type ReportStatus = 'DRAFT' | 'SENT' | 'APPROVED' | 'RETURNED';
 
 // Mapeo de estados a español
 export const ReportStatusLabels: Record<ReportStatus, string> = {
     DRAFT: 'Borrador',
     SENT: 'Enviado',
-    REVIEWED: 'Revisado',
     APPROVED: 'Aprobado',
-    REJECTED: 'Rechazado',
+    RETURNED: 'Devuelto',
 };
 
 // Informe completo con información del empleado para admin
@@ -70,9 +69,8 @@ export interface ReportsStats {
     total: number;
     draft: number;
     sent: number;
-    reviewed: number;
     approved: number;
-    rejected: number;
+    returned: number;
 }
 
 // ============================================
@@ -88,6 +86,7 @@ export interface EmployeeReport {
     objective?: string;
     evidencieLink?: string;
     status: ReportStatus;
+    observation?: string;
     createdAt: string;
     updatedAt?: string;
     sentAt?: string;
@@ -109,4 +108,3 @@ export interface PagedResponse<T> {
 // Specific paged responses
 export type PagedAdminReports = PagedResponse<AdminReport>;
 export type PagedEmployeeReports = PagedResponse<EmployeeReport>;
-
