@@ -57,9 +57,11 @@ export const authService = {
      * @returns Registration response
      */
     async registerBoss(data: BossRegistrationRequest): Promise<RegistrationResponse> {
+        const registrationKey = import.meta.env.VITE_BOSS_REGISTRATION_KEY || '';
         const response = await apiClient.postPublic<RegistrationResponse>(
             '/api/auth/boss',
-            data
+            data,
+            { 'X-Registration-Key': registrationKey }
         );
 
         // Auto-login: store token if registration returns it
