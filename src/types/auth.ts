@@ -14,6 +14,7 @@ export interface BossRegistrationRequest {
     position: string;
     department: string;
     bossCode: string;
+    registrationKey?: string;
 }
 
 export interface EmployeeRegistrationRequest {

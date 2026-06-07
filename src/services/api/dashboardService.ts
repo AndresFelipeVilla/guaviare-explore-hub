@@ -24,6 +24,21 @@ function mapBackendStatus(backendStatus: string): ReportStatus {
     return statusMap[backendStatus.toUpperCase()] || 'SENT';
 }
 
+/**
+ * Map frontend status values (English) to backend enum (Spanish)
+ * The backend uses: BORRADOR, ENVIADO, APROBADO, DEVUELTO
+ */
+function mapFrontendStatusToBackend(frontendStatus: string): string {
+    const statusMap: Record<string, string> = {
+        'SENT': 'ENVIADO',
+        'APPROVED': 'APROBADO',
+        'RETURNED': 'DEVUELTO',
+        'DRAFT': 'BORRADOR',
+    };
+
+    return statusMap[frontendStatus.toUpperCase()] || frontendStatus;
+}
+
 // ============================================
 // Dashboard API Service
 // ============================================
@@ -82,7 +97,7 @@ export const dashboardService = {
 
             // Add filters if provided
             if (filters?.status) {
-                params.append('status', filters.status);
+                params.append('status', mapFrontendStatusToBackend(filters.status));
             }
             if (filters?.search) {
                 params.append('query', filters.search);
@@ -201,7 +216,7 @@ export const dashboardService = {
 
             // Add filters if provided
             if (filters?.status) {
-                params.append('status', filters.status);
+                params.append('status', mapFrontendStatusToBackend(filters.status));
             }
             if (filters?.search) {
                 params.append('query', filters.search);

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import AdminSidebar from '@/components/dashboard/AdminSidebar';
@@ -8,11 +8,13 @@ import { authService } from '@/services/api/authService';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { formatRole } from '@/utils/format';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
+import { ReportFilters } from '@/types/dashboard';
 
 export default function AdminViewReports() {
     const navigate = useNavigate();
     const [pageError, setPageError] = useState<string>('');
     const [currentPage, setCurrentPage] = useState(0);
+    const [filters, setFilters] = useState<ReportFilters>({});
 
     // Require admin/boss authentication
     useRequireAuth({ allowedRoles: ['BOSS', 'JEFE', 'ADMIN'] });
@@ -28,10 +30,10 @@ export default function AdminViewReports() {
         retry: false,
     });
 
-    // Fetch all reports for admin with pagination
+    // Fetch all reports for admin with pagination and filters
     const { data: reportsData, isLoading: reportsLoading, error: reportsError } = useQuery({
-        queryKey: ['adminReports', currentPage],
-        queryFn: () => dashboardService.getAdminReports(currentPage, 10),
+        queryKey: ['adminReports', currentPage, filters],
+        queryFn: () => dashboardService.getAdminReports(currentPage, 10, filters),
         enabled: authService.isAuthenticated(),
         retry: false,
     });
@@ -40,6 +42,12 @@ export default function AdminViewReports() {
     const handlePageChange = (newPage: number) => {
         setCurrentPage(newPage);
     };
+
+    // Handler for filter changes from table component
+    const handleFilterChange = useCallback((newFilters: ReportFilters) => {
+        setFilters(newFilters);
+        setCurrentPage(0); // Reset to first page when filters change
+    }, []);
 
     // Use API data if available, otherwise use stored data
     const userName = profile?.name || storedUser?.name || 'Administrador';
@@ -143,6 +151,7 @@ export default function AdminViewReports() {
                             pageSize: reportsData.size,
                         } : undefined}
                         onPageChange={handlePageChange}
+                        onFilterChange={handleFilterChange}
                     />
                 </main>
             </div>

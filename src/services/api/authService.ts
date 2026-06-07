@@ -52,15 +52,26 @@ export const authService = {
     },
 
     /**
+     * Validate boss registration key against the backend before showing the form.
+     * @param key - The admin key entered by the user
+     */
+    async validateBossKey(key: string): Promise<{ valid: boolean; message: string }> {
+        return apiClient.postPublic<{ valid: boolean; message: string }>(
+            '/api/auth/validate-boss-key',
+            { key }
+        );
+    },
+
+    /**
      * Register a new boss user
-     * @param data - Boss registration data
+     * @param data - Boss registration data (include registrationKey for backend double-validation)
      * @returns Registration response
      */
     async registerBoss(data: BossRegistrationRequest): Promise<RegistrationResponse> {
-        const registrationKey = import.meta.env.VITE_BOSS_REGISTRATION_KEY || '';
+        const registrationKey = data.registrationKey || import.meta.env.VITE_BOSS_REGISTRATION_KEY || '';
         const response = await apiClient.postPublic<RegistrationResponse>(
             '/api/auth/boss',
-            data,
+            { ...data, registrationKey },
             { 'X-Registration-Key': registrationKey }
         );
 

@@ -7,7 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Briefcase, Loader2, AlertCircle } from 'lucide-react';
 
-export default function BossRegistrationForm() {
+interface BossRegistrationFormProps {
+    registrationKey: string | null;
+}
+
+export default function BossRegistrationForm({ registrationKey }: BossRegistrationFormProps) {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         name: '',
@@ -59,8 +63,8 @@ export default function BossRegistrationForm() {
 
         console.log('Form validation passed, submitting to API...');
 
-        // Submit registration
-        registerMutation.mutate(formData, {
+        // Submit registration — incluye la clave verificada en el body
+        registerMutation.mutate({ ...formData, registrationKey: registrationKey || undefined }, {
             onSuccess: (data) => {
                 console.log('Registration API call successful:', data);
 

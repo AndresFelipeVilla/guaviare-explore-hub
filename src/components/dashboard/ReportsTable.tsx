@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { Search, Filter, ChevronDown, Eye } from 'lucide-react';
-import { AdminReport, ReportStatus, ReportStatusLabels } from '@/types/dashboard';
+import { AdminReport, ReportStatus, ReportFilters } from '@/types/dashboard';
 import StatusBadge from './StatusBadge';
 import Pagination from '@/components/ui/Pagination';
 
@@ -15,6 +15,7 @@ interface ReportsTableProps {
         pageSize: number;
     };
     onPageChange?: (page: number) => void;
+    onFilterChange?: (filters: ReportFilters) => void;
 }
 
 const statusOptions: { value: ReportStatus | 'ALL'; label: string }[] = [
@@ -25,32 +26,40 @@ const statusOptions: { value: ReportStatus | 'ALL'; label: string }[] = [
     { value: 'DRAFT', label: 'Borrador' },
 ];
 
-export default function ReportsTable({ reports, isLoading, onViewReport, paginationData, onPageChange }: ReportsTableProps) {
+export default function ReportsTable({ reports, isLoading, onViewReport, paginationData, onPageChange, onFilterChange }: ReportsTableProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<ReportStatus | 'ALL'>('ALL');
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [searchTimeout, setSearchTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
 
-    // Filter reports based on search and status
-    const filteredReports = useMemo(() => {
-        // Ensure reports is always an array
-        const reportsArray = Array.isArray(reports) ? reports : [];
+    // Emit filter changes to parent for server-side filtering
+    const emitFilterChange = useCallback((search: string, status: ReportStatus | 'ALL') => {
+        if (onFilterChange) {
+            onFilterChange({
+                search: search || undefined,
+                status: status === 'ALL' ? undefined : status,
+            });
+        }
+    }, [onFilterChange]);
 
-        return reportsArray.filter((report) => {
-            // Status filter
-            if (statusFilter !== 'ALL' && report.status !== statusFilter) {
-                return false;
-            }
-            // Search filter
-            if (searchQuery) {
-                const query = searchQuery.toLowerCase();
-                return (
-                    (report.title?.toLowerCase().includes(query) || false) ||
-                    (report.employeeName?.toLowerCase().includes(query) || false)
-                );
-            }
-            return true;
-        });
-    }, [reports, searchQuery, statusFilter]);
+    // Handle search input with debounce
+    const handleSearchChange = useCallback((value: string) => {
+        setSearchQuery(value);
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+        const timeout = setTimeout(() => {
+            emitFilterChange(value, statusFilter);
+        }, 400);
+        setSearchTimeout(timeout);
+    }, [searchTimeout, statusFilter, emitFilterChange]);
+
+    // Handle status filter change
+    const handleStatusChange = useCallback((status: ReportStatus | 'ALL') => {
+        setStatusFilter(status);
+        setIsFilterOpen(false);
+        emitFilterChange(searchQuery, status);
+    }, [searchQuery, emitFilterChange]);
 
     // Format date
     const formatDate = (dateString: string) => {
@@ -99,7 +108,7 @@ export default function ReportsTable({ reports, isLoading, onViewReport, paginat
                             type="text"
                             placeholder="Buscar por título o empleado..."
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e) => handleSearchChange(e.target.value)}
                             className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-sm"
                         />
                     </div>
@@ -123,8 +132,7 @@ export default function ReportsTable({ reports, isLoading, onViewReport, paginat
                                     <button
                                         key={option.value}
                                         onClick={() => {
-                                            setStatusFilter(option.value);
-                                            setIsFilterOpen(false);
+                                            handleStatusChange(option.value);
                                         }}
                                         className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${statusFilter === option.value ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
                                             } ${option.value === 'ALL' ? 'rounded-t-lg' : ''} ${option.value === 'DRAFT' ? 'rounded-b-lg' : ''}`}
@@ -156,7 +164,7 @@ export default function ReportsTable({ reports, isLoading, onViewReport, paginat
                             ))}
                         </div>
                     </div>
-                ) : filteredReports.length === 0 ? (
+                ) : reports.length === 0 ? (
                     <div className="p-12 text-center">
                         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
                             <Search className="w-8 h-8 text-gray-400" />
@@ -190,7 +198,7 @@ export default function ReportsTable({ reports, isLoading, onViewReport, paginat
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {filteredReports.map((report) => (
+                            {reports.map((report) => (
                                 <tr key={report.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">

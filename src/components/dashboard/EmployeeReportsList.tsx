@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { Search, Filter, ChevronDown, Edit3, Trash2, Eye, FileText, Loader2, MessageSquare, RotateCcw } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import { toast } from 'sonner';
-import { EmployeeReport, ReportStatus } from '@/types/dashboard';
+import { EmployeeReport, ReportStatus, ReportFilters } from '@/types/dashboard';
 import StatusBadge from './StatusBadge';
 import ReportPDF from '@/components/pdf/ReportPDF';
 import { reportService } from '@/services/api/reportService';
@@ -189,6 +189,7 @@ interface EmployeeReportsListProps {
         pageSize: number;
     };
     onPageChange?: (page: number) => void;
+    onFilterChange?: (filters: ReportFilters) => void;
 }
 
 const statusOptions: { value: ReportStatus | 'ALL'; label: string }[] = [
@@ -207,29 +208,47 @@ export default function EmployeeReportsList({
     onDelete,
     onView,
     paginationData,
-    onPageChange
+    onPageChange,
+    onFilterChange
 }: EmployeeReportsListProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<ReportStatus | 'ALL'>('ALL');
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [searchTimeout, setSearchTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
 
-    // Filter reports based on search and status
-    const filteredReports = useMemo(() => {
-        const reportsArray = Array.isArray(reports) ? reports : [];
+    // Emit filter changes to parent for server-side filtering
+    const emitFilterChange = useCallback((search: string, status: ReportStatus | 'ALL') => {
+        if (onFilterChange) {
+            onFilterChange({
+                search: search || undefined,
+                status: status === 'ALL' ? undefined : status,
+            });
+        }
+    }, [onFilterChange]);
 
-        return reportsArray.filter((report) => {
-            // Status filter
-            if (statusFilter !== 'ALL' && report.status !== statusFilter) {
-                return false;
-            }
-            // Search filter
-            if (searchQuery) {
-                const query = searchQuery.toLowerCase();
-                return report.title?.toLowerCase().includes(query) || false;
-            }
-            return true;
-        });
-    }, [reports, searchQuery, statusFilter]);
+    // Handle search input with debounce
+    const handleSearchChange = useCallback((value: string) => {
+        setSearchQuery(value);
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+        const timeout = setTimeout(() => {
+            emitFilterChange(value, statusFilter);
+        }, 400);
+        setSearchTimeout(timeout);
+    }, [searchTimeout, statusFilter, emitFilterChange]);
+
+    // Handle status filter change
+    const handleStatusChange = useCallback((status: ReportStatus | 'ALL') => {
+        setStatusFilter(status);
+        setIsFilterOpen(false);
+        emitFilterChange(searchQuery, status);
+    }, [searchQuery, emitFilterChange]);
+
+    // Handle search button click
+    const handleSearchClick = useCallback(() => {
+        emitFilterChange(searchQuery, statusFilter);
+    }, [searchQuery, statusFilter, emitFilterChange]);
 
     return (
         <div className="space-y-6">
@@ -246,7 +265,7 @@ export default function EmployeeReportsList({
                                 type="text"
                                 placeholder="Título, palabra clave..."
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onChange={(e) => handleSearchChange(e.target.value)}
                                 className="w-full pl-4 pr-4 py-2.5 rounded-lg border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all text-sm"
                             />
                         </div>
@@ -274,8 +293,7 @@ export default function EmployeeReportsList({
                                         <button
                                             key={option.value}
                                             onClick={() => {
-                                                setStatusFilter(option.value);
-                                                setIsFilterOpen(false);
+                                                handleStatusChange(option.value);
                                             }}
                                             className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${statusFilter === option.value ? 'bg-green-50 text-green-700' : 'text-gray-700'
                                                 } ${index === 0 ? 'rounded-t-lg' : ''} ${index === statusOptions.length - 1 ? 'rounded-b-lg' : ''}`}
@@ -290,7 +308,10 @@ export default function EmployeeReportsList({
 
                     {/* Search Button */}
                     <div className="sm:w-32 flex items-end">
-                        <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-700 text-white rounded-lg text-sm font-medium hover:bg-green-800 transition-colors">
+                        <button
+                            onClick={handleSearchClick}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-700 text-white rounded-lg text-sm font-medium hover:bg-green-800 transition-colors"
+                        >
                             <Search className="w-4 h-4" />
                             Buscar
                         </button>
@@ -319,7 +340,7 @@ export default function EmployeeReportsList({
                         </div>
                     ))}
                 </div>
-            ) : filteredReports.length === 0 ? (
+            ) : reports.length === 0 ? (
                 <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
                         <Search className="w-8 h-8 text-gray-400" />
@@ -333,7 +354,7 @@ export default function EmployeeReportsList({
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {filteredReports.map((report) => (
+                    {reports.map((report) => (
                         <EmployeeReportCard
                             key={report.id}
                             report={report}

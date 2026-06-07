@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Moon, Sun, AlertCircle, Loader2 } from 'lucide-react';
@@ -10,6 +10,7 @@ import { authService } from '@/services/api/authService';
 import { toast } from 'sonner';
 import { formatRole } from '@/utils/format';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
+import { ReportFilters } from '@/types/dashboard';
 
 export default function MyReports() {
     const navigate = useNavigate();
@@ -18,6 +19,7 @@ export default function MyReports() {
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [reportToDelete, setReportToDelete] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(0);
+    const [filters, setFilters] = useState<ReportFilters>({});
 
     // Require employee authentication
     useRequireAuth({ allowedRoles: ['EMPLOYEE', 'EMPLEADO'] });
@@ -32,10 +34,10 @@ export default function MyReports() {
         enabled: authService.isAuthenticated(),
     });
 
-    // Fetch my reports with pagination
+    // Fetch my reports with pagination and filters
     const { data: reportsData, isLoading: reportsLoading, error: reportsError } = useQuery({
-        queryKey: ['myReports', currentPage],
-        queryFn: () => dashboardService.getMyReports(currentPage, 3),
+        queryKey: ['myReports', currentPage, filters],
+        queryFn: () => dashboardService.getMyReports(currentPage, 3, filters),
         enabled: authService.isAuthenticated(),
     });
 
@@ -43,6 +45,12 @@ export default function MyReports() {
     const handlePageChange = (newPage: number) => {
         setCurrentPage(newPage);
     };
+
+    // Handler for filter changes from list component
+    const handleFilterChange = useCallback((newFilters: ReportFilters) => {
+        setFilters(newFilters);
+        setCurrentPage(0); // Reset to first page when filters change
+    }, []);
 
     // Delete mutation
     const deleteMutation = useMutation({
@@ -156,6 +164,7 @@ export default function MyReports() {
                         pageSize: reportsData.size,
                     } : undefined}
                     onPageChange={handlePageChange}
+                    onFilterChange={handleFilterChange}
                 />
             </main>
 
