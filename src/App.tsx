@@ -16,6 +16,7 @@ import AdminViewReports from "./pages/AdminViewReports";
 import MyReports from "./pages/MyReports";
 import ReportDetails from "./pages/ReportDetails";
 import AdminReportDetails from "./pages/AdminReportDetails";
+import AdminSettings from "./pages/AdminSettings";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/admin" element={<Navigate to="/admin/informes" replace />} />
             <Route path="/admin/informes" element={<AdminViewReports />} />
             <Route path="/admin/informe/detalles/:reportId" element={<AdminReportDetails />} />
+            <Route path="/admin/configuracion" element={<AdminSettings />} />
             <Route path="/chatbot" element={<Chatbot />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/auth/reset-password" element={<ResetPassword />} />

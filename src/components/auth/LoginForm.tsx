@@ -47,9 +47,11 @@ export default function LoginForm() {
                 const normalizedRole = userRole?.toUpperCase() || '';
                 const isAdminOrBoss = ADMIN_ROLES.includes(normalizedRole);
 
-                console.log('Login exitoso. Rol:', normalizedRole, 'Es admin:', isAdminOrBoss);
-
-                if (isAdminOrBoss) {
+                // El ADMIN (gestor de la clave de registro) va a su panel de configuración;
+                // jefes van a la vista de informes.
+                if (normalizedRole === 'ADMIN') {
+                    navigate('/admin/configuracion');
+                } else if (isAdminOrBoss) {
                     navigate('/admin/informes');
                 } else {
                     navigate('/dashboard');
